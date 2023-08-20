@@ -1,0 +1,28 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  height: 100vh;
+  overflow-x: hidden;
+  font-size: 16px;
+  line-height: 1.2;
+  overflow: hidden;
+  overflow-y: visible;
+}
+
+.root {
+  height: 100vh;
+}
+
+a {
+  transition: color 0.15s;
+  text-decoration: none;
+}
+
+p {
+  margin: 0;
+}
