@@ -1,5 +1,4 @@
 import { FC, useState, ChangeEvent, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { debounce } from "lodash";
 
 import {
@@ -9,91 +8,56 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  IconButton,
+  Typography,
 } from "@mui/material";
 
-import AddIcon from "@mui/icons-material/Add";
-import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
-import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+import { StyledGrid } from "./main-page.style";
 
-import { StyledGrid } from './main-page.style';
+import { FooterBlock, HeaderBlock, ServiceCard } from "../../molecules";
+import { ServiceModal } from "../reservation-modal";
+import { useGetAllServicesQuery } from "../../../store/serviceSlice";
+import { UserModal } from "../user-modal";
 
-import {
-  HeaderBlock,
-  MobileHeaderBlock,
-  Sticky,
-  ToDoModal,
-} from "../../molecules";
-import { MobileButton } from "../../atoms";
-import { useGetAllTodosQuery } from "../../../store/todoSlice";
-
-import { PAGE_SIZE } from "./main-page.constants";
-
-interface MainPageProps {
-  setToken: (token: string | null) => void;
-}
-
-export const MainPage: FC<MainPageProps> = ({setToken}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isEdit, setIsEdit] = useState(false);
-  const [activeTodo, setActiveTodo] = useState<Todo | null>(null); // active todo for edit
+export const MainPage: FC = () => {
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isUserOpen, setIsUserOpen] = useState<boolean>(false);
+  const [activeService, setActiveService] = useState<Service | null>(null); // active service for reservation
   const [searchText, setSearchText] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string>("All");
-  const [currentPage, setCurrentPage] = useState<number>(1);
 
-
-  const navigate = useNavigate();
-
-  const { data, error } = useGetAllTodosQuery(); // fetch data from server
-
-  // Authorization error handling
-  if (error && "status" in error && error?.status === 401) {
-    sessionStorage.removeItem("token");
-    setToken(null);
-    navigate("/login");
-  }
+  const { data, error } = useGetAllServicesQuery(); // fetch data from server
 
   // Memoized filtered data
   const filteredData = useMemo(() => {
     return data?.filter(
-      (todo) =>
-        todo.title.toLowerCase().includes(searchText.toLowerCase()) &&
-        (selectedStatus === "All" || todo.status === selectedStatus)
+      (service) =>
+        service.serviceName.toLowerCase().includes(searchText.toLowerCase()) &&
+        (selectedStatus === "All" || service.category === selectedStatus)
     );
-  }, [data, searchText, selectedStatus]); 
+  }, [data, searchText, selectedStatus]);
 
   // Function to handle search input change with debounce
   const handleInputChange = debounce((e: ChangeEvent<HTMLInputElement>) => {
     const searchText = e.target.value;
     setSearchText(searchText);
-  }, 100); 
+  }, 100);
 
   // Function to handle status change
   const handleStatusChange = (e: any) => {
     const category = e.target.value;
     setSelectedStatus(category);
-  }; 
-
-  // Function to handle modal open/close
-  const handleModalOpen = (edit: boolean, todo: Todo | null) => {
-    setIsOpen(!isOpen);
-    setIsEdit(edit);
-    setActiveTodo(todo);
-  }; 
-
-  // Pagination logic
-  const startIndex = (currentPage - 1) * PAGE_SIZE;
-  const endIndex = startIndex + PAGE_SIZE;
-  const totalTodos = filteredData?.length ?? 0;
-  const totalPages = Math.ceil(totalTodos / PAGE_SIZE);
-
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
   };
 
-  const paginatedData = useMemo(() => {
-    return filteredData?.slice(startIndex, endIndex);
-  }, [data, searchText, selectedStatus, currentPage]); // memoized filtered data
+  // Function to handle reservation modal open/close
+  const handleModalOpen = (service: Service | null) => {
+    setIsOpen(!isOpen);
+    setActiveService(service);
+  };
+
+  // Function to handle user modal open/close
+  const handleUserModalOpen = () => {
+    setIsUserOpen(!isUserOpen);
+  };
 
   return (
     <>
@@ -103,20 +67,12 @@ export const MainPage: FC<MainPageProps> = ({setToken}) => {
             key={"Add Button"}
             variant="contained"
             color="primary"
-            onClick={() => handleModalOpen(false, null)}
-            endIcon={<AddIcon />}
+            onClick={() => handleUserModalOpen()}
           >
-            Add Task
+            My Reservations
           </Button>,
         ]}
         centerSlot={[
-          <IconButton
-            key={"Previous Page"}
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            <ArrowBackIosIcon />
-          </IconButton>,
           <TextField
             key={"Search Input"}
             id="outlined-basic"
@@ -125,17 +81,10 @@ export const MainPage: FC<MainPageProps> = ({setToken}) => {
             fullWidth
             onChange={handleInputChange}
           />,
-          <IconButton
-            key={"Next Page"}
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            <ArrowForwardIosIcon />
-          </IconButton>,
         ]}
         rightSlot={[
           <FormControl sx={{ width: "200px" }} key={"Status Select"}>
-            <InputLabel id="status-select-label">Status</InputLabel>
+            <InputLabel id="status-select-label">Category</InputLabel>
             <Select
               labelId="status-select-label"
               id="status-select"
@@ -144,46 +93,69 @@ export const MainPage: FC<MainPageProps> = ({setToken}) => {
               onChange={handleStatusChange}
             >
               <MenuItem value={"All"}>All</MenuItem>
-              <MenuItem value={"New"}>New</MenuItem>
-              <MenuItem value={"InProgress"}>In Progress</MenuItem>
-              <MenuItem value={"Done"}>Done</MenuItem>
+              <MenuItem value={"Face care"}>Face care</MenuItem>
+              <MenuItem value={"Body care"}>Body care</MenuItem>
+              <MenuItem value={"Eyebrow tattooing"}>Eyebrow tattooing</MenuItem>
+              <MenuItem value={"Hairstyling"}>Hairstyling</MenuItem>
             </Select>
           </FormControl>,
         ]}
       />
-      <MobileHeaderBlock
-        leftSlot={[
-          <IconButton
-            key={"Previous Page mobile"}
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            <ArrowBackIosIcon />
-          </IconButton>,
-        ]}
-        rightSlot={[
-          <IconButton
-            key={"Next Page mobile"}
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            <ArrowForwardIosIcon />
-          </IconButton>,
-        ]}
-      />
       <StyledGrid container>
-        {paginatedData?.map((item) => (
-          <Sticky item={item} onClick={handleModalOpen} key={item._id} />
+        {filteredData?.map((item) => (
+          <ServiceCard
+            service={item}
+            onClick={handleModalOpen}
+            key={item._id}
+          />
         ))}
       </StyledGrid>
-      <MobileButton onClick={() => handleModalOpen(false, null)} />
-      <ToDoModal
+      <FooterBlock
+        leftSlot={[
+          <Typography
+            sx={{ fontSize: 20, fontWeight: "700" }}
+            color="primary.main"
+            gutterBottom
+            key="adress"
+          >
+            Strahinjica Bana 53, Beograd
+          </Typography>,
+        ]}
+        centerSlot={[
+          <Typography
+            sx={{ fontSize: 20, fontWeight: "700" }}
+            color="primary.main"
+            gutterBottom
+            key="worktime"
+          >
+            Mon - Fri 10:00 - 20:00
+          </Typography>,
+        ]}
+        rightSlot={[
+          <Typography
+            sx={{ fontSize: 20, fontWeight: "700" }}
+            color="primary.main"
+            gutterBottom
+            key="number"
+          >
+            061/11 12 113
+          </Typography>,
+          <Typography
+            sx={{ fontSize: 20, fontWeight: "700" }}
+            color="primary.main"
+            gutterBottom
+            key="email"
+          >
+            beauty.salon@gmail.com
+          </Typography>,
+        ]}
+      />
+      <ServiceModal
         open={isOpen}
         handleModalOpen={handleModalOpen}
-        edit={isEdit}
-        activeTodo={activeTodo}
-        setToken={setToken}
+        activeService={activeService}
       />
+      <UserModal open={isUserOpen} handleModalOpen={handleUserModalOpen} />
     </>
   );
 };

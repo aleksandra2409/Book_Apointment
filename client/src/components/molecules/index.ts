@@ -1,4 +1,3 @@
-export * from "./sticky";
 export * from "./header-block";
-export * from "./todo-modal";
-export * from "./mobile-header-block";
+export * from "./service-card";
+export * from "./footer-block";

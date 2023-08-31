@@ -6,11 +6,9 @@ import { Grid } from "@mui/material";
 export const StyledGrid = styled(Grid)(() => ({
   backgroundColor: "#F2F7F7",
   padding: "32px",
-  minHeight: "100vh",
+  minHeight: "calc(100vh - 200px)",
   flexDirection: "row",
   gap: "32px",
   alignContent: "flex-start",
-  "@media (max-width: 768px)": {
-    justifyContent: "center",
-  },
+  justifyContent: "center",
 }));

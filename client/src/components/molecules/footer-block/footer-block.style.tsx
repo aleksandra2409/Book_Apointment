@@ -9,7 +9,7 @@ export const StyledGrid = styled(Grid, {
   display: "flex",
   alignItems: "center",
   gap: "8px",
-  padding: "16px 32px",
+  padding: "16px 32px !important",
   ":empty": {
     display: "none",
   },
